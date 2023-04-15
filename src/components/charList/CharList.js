@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Spinner from "../spinner/Spinner";
 import ErrorMessage from "../errorMessage/ErrorMessage";
 import useMarvelService from "../services/MarvelService";
@@ -54,16 +54,13 @@ const CharList = (props) => {
     }
 
     setCharList(charList => [...charList, ...newCharList]);
-    setNewItemLoading(newItemLoading => false);
+    setNewItemLoading(false);
     setOffset(offset => offset + 9);
-    setCharEnded(charEnded => ended);
+    setCharEnded(ended);
   };
 
   const itemRefs = useRef([]);
 
-  const setRef = (ref) => {
-    this.itemRefs.push(ref);
-  }
 
   const focusOnItem = id => {
     itemRefs.current.forEach(item => item.classList.remove('char_item_selected'));
@@ -82,24 +79,26 @@ const CharList = (props) => {
       }
 
       return (
-        <li 
-          className="char__item" 
-          tabIndex={0} 
-          ref={el => itemRefs.current[i] = el} 
-          key={item.id} 
-          onClick={() => {
-            props.onCharSelected(item.id);
-            focusOnItem(i);
-          }}>
-          onKeyPress={(e) => {
-            if(e.key === ' ' || e.key === "Enter") {
+        <CSSTransition key={item.id} timeout={500} classNames="char__item">
+          <li 
+            className="char__item" 
+            tabIndex={0} 
+            ref={el => itemRefs.current[i] = el} 
+            key={item.id} 
+            onClick={() => {
               props.onCharSelected(item.id);
-              focusOnItem(i)
-            }
-          }}
-          <img src={item.thumbnail} alt={item.name} style={imgStyle} />
-          <div className="char__name">{item.name}</div>
-        </li>
+              focusOnItem(i);
+            }}>
+            onKeyPress={(e) => {
+              if(e.key === ' ' || e.key === "Enter") {
+                props.onCharSelected(item.id);
+                focusOnItem(i)
+              }
+            }}
+            <img src={item.thumbnail} alt={item.name} style={imgStyle} />
+            <div className="char__name">{item.name}</div>
+          </li>
+        </CSSTransition>
       );
     });
     return (
@@ -111,10 +110,13 @@ const CharList = (props) => {
     )
   }
 
+  const elements = useMemo(() => {
+    return setContent(process, () => renderItems(charList), newItemLoading)
+  }, [process])
 
   return (
     <div className="char__list">
-      {setContent(process, () => renderItems(charList), newItemLoading)}
+      {elements}
       <button className="button button__main button__long"
       disabled={newItemLoading}
       style={{'display': charEnded ? 'none' : 'block'}}
